@@ -1,0 +1,42 @@
+.join-meeting-page {
+  text-align: center;
+}
+
+.meeting-controls {
+  margin-top: 20px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.control-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+}
+
+.control-button:hover {
+  background-color: #0056b3;
+}
+
+.control-button i {
+  pointer-events: none; /* Ensure icons are clickable with the button */
+}
+
+.video-container {
+  margin: 20px auto;
+  width: 80%;
+  max-width: 600px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  overflow: hidden;
+}
