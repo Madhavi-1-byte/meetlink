@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .join-meeting-page {
   text-align: center;
 }
@@ -51,3 +52,58 @@
 button i {
   font-size: 24px;
 }
+=======
+.join-meeting-page {
+  text-align: center;
+}
+
+.webcam-container {
+  margin: 20px;
+}
+
+.webcam {
+  width: 100%;
+  height: auto;
+}
+
+.meeting-actions button {
+  font-size: 24px;
+  padding: 10px;
+  margin: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.meeting-actions button:hover {
+  background-color: #f0f0f0;
+}
+
+.participants {
+  margin-top: 20px;
+}
+
+.actions {
+  margin-top: 20px;
+}
+
+.remove-btn, .exit-btn {
+  font-size: 18px;
+  padding: 10px 15px;
+  margin: 5px;
+}
+
+.remove-btn {
+  background-color: red;
+  color: white;
+}
+
+.exit-btn {
+  background-color: rgb(13, 0, 128);
+  color: white;
+}
+
+button i {
+  font-size: 24px;
+}
+>>>>>>> 212cead2c884b7b83920a3fc34bfdf4b7399f59e
