@@ -2,41 +2,52 @@
   text-align: center;
 }
 
-.meeting-controls {
-  margin-top: 20px;
+.webcam-container {
+  margin: 20px;
 }
 
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
+.webcam {
+  width: 100%;
+  height: auto;
 }
 
-.control-button {
-  background-color: #007bff;
-  color: white;
+.meeting-actions button {
+  font-size: 24px;
+  padding: 10px;
+  margin: 10px;
   border: none;
-  padding: 15px;
-  border-radius: 50%;
+  background: none;
   cursor: pointer;
+}
+
+.meeting-actions button:hover {
+  background-color: #f0f0f0;
+}
+
+.participants {
+  margin-top: 20px;
+}
+
+.actions {
+  margin-top: 20px;
+}
+
+.remove-btn, .exit-btn {
   font-size: 18px;
-  transition: background-color 0.3s ease;
+  padding: 10px 15px;
+  margin: 5px;
 }
 
-.control-button:hover {
-  background-color: #0056b3;
+.remove-btn {
+  background-color: red;
+  color: white;
 }
 
-.control-button i {
-  pointer-events: none; /* Ensure icons are clickable with the button */
+.exit-btn {
+  background-color: rgb(13, 0, 128);
+  color: white;
 }
 
-.video-container {
-  margin: 20px auto;
-  width: 80%;
-  max-width: 600px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  overflow: hidden;
+button i {
+  font-size: 24px;
 }
