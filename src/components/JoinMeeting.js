@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
 import "font-awesome/css/font-awesome.min.css";
-import '@fortawesome/fontawesome-free/css/all.min.css';
-// Import Font Awesome for icons
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./JoinMeeting.css";
 
 function JoinMeeting({ socket }) {
@@ -12,6 +11,8 @@ function JoinMeeting({ socket }) {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [isHandRaised, setIsHandRaised] = useState(false);
+  const [participants, setParticipants] = useState([]);
 
   useEffect(() => {
     if (!socket) {
@@ -19,13 +20,17 @@ function JoinMeeting({ socket }) {
       return;
     }
 
+    // Join the room
     socket.emit("joinRoom", id);
-    socket.on("roomJoined", (message) => console.log(message));
-    socket.on("newUserJoined", (message) => console.log(message));
+
+    // Listen for updates from the server
+    socket.on("roomParticipants", (updatedParticipants) => {
+      setParticipants(updatedParticipants);
+    });
 
     return () => {
+      socket.emit("leaveRoom", id);
       socket.disconnect();
-      console.log("Socket disconnected.");
     };
   }, [id, socket]);
 
@@ -43,12 +48,10 @@ function JoinMeeting({ socket }) {
 
   const handleScreenShare = async () => {
     if (isScreenSharing) {
-      // Stop screen sharing
       setIsScreenSharing(false);
     } else {
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        // Screen sharing logic (e.g., add the stream to a video element)
         setIsScreenSharing(true);
       } catch (error) {
         console.error("Error starting screen share:", error);
@@ -56,25 +59,42 @@ function JoinMeeting({ socket }) {
     }
   };
 
+  const toggleHandRaise = () => {
+    const newStatus = !isHandRaised;
+    setIsHandRaised(newStatus);
+    socket.emit("handRaise", { raised: newStatus });
+  };
+
   return (
     <div className="join-meeting-page">
       <h1>Meeting ID: {id}</h1>
-      <div className="meeting-controls">
-        {isCameraOn && <Webcam audio={isMicOn} />}
-        <div className="controls">
+
+      <div className="video-container">
+        <div className="controls-container">
+          {/* Participants Icon */}
+          <button className="control-button participants-button">
+            <i className="fa fa-users"></i>
+            <span className="participants-count">{participants.length}</span>
+          </button>
+
           {/* Microphone Toggle */}
           <button onClick={toggleMic} className="control-button">
             <i className={`fa ${isMicOn ? "fa-microphone" : "fa-microphone-slash"}`}></i>
           </button>
 
+          {/* Camera Toggle */}
           <button onClick={toggleCamera} className="control-button">
-  <i className={`fa ${isCameraOn ? "fa-video" : "fa-video-slash"}`}></i>
-</button>
-
+            <i className={`fa ${isCameraOn ? "fa-video" : "fa-video-slash"}`}></i>
+          </button>
 
           {/* Screen Share */}
           <button onClick={handleScreenShare} className="control-button">
-            <i className={`fa ${isScreenSharing ? "fa-desktop" : "fa-desktop"}`}></i>
+            <i className="fa fa-desktop"></i>
+          </button>
+
+          {/* Hand Raise */}
+          <button onClick={toggleHandRaise} className="control-button">
+            <i className={`fa ${isHandRaised ? "fa-hand-paper" : "fa-hand-rock"}`}></i>
           </button>
 
           {/* Exit Meeting */}
@@ -82,6 +102,9 @@ function JoinMeeting({ socket }) {
             <i className="fa fa-sign-out"></i>
           </button>
         </div>
+
+        {/* Video Stream */}
+        {isCameraOn && <Webcam audio={isMicOn} />}
       </div>
     </div>
   );
