@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
 import "font-awesome/css/font-awesome.min.css";
@@ -8,13 +8,12 @@ import "./JoinMeeting.css";
 function JoinMeeting({ socket }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const webcamRef = useRef(null); // Add reference for webcam component
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [participants, setParticipants] = useState([]);
-  const [screenStream, setScreenStream] = useState(null); // Manage screen sharing stream
+  const [stream, setStream] = useState(null);
 
   useEffect(() => {
     if (!socket) {
@@ -22,47 +21,67 @@ function JoinMeeting({ socket }) {
       return;
     }
 
-    // Join the room
+    // Join the meeting room
     socket.emit("joinRoom", id);
 
-    // Listen for updates from the server
+    // Listen for updates on room participants
     socket.on("roomParticipants", (updatedParticipants) => {
       setParticipants(updatedParticipants);
     });
 
-    return () => {
-      socket.emit("leaveRoom", id);
-      // Do not disconnect the socket; only leave the room
+    // Start user media (camera + microphone)
+    const startUserMedia = async () => {
+      try {
+        const userStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        setStream(userStream);
+      } catch (error) {
+        console.error("Error accessing user media:", error);
+      }
     };
-  }, [id, socket]);
 
-  const handleExit = () => {
-    navigate("/");
-  };
+    startUserMedia();
+
+    return () => {
+      // Leave the meeting room on cleanup
+      socket.emit("leaveRoom", id);
+      socket.disconnect();
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [id, socket, stream]);
 
   const toggleMic = () => {
-    setIsMicOn(!isMicOn);
+    if (stream) {
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) audioTrack.enabled = !isMicOn;
+      setIsMicOn(!isMicOn);
+    }
   };
 
   const toggleCamera = () => {
-    setIsCameraOn(!isCameraOn);
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) videoTrack.enabled = !isCameraOn;
+      setIsCameraOn(!isCameraOn);
+    }
   };
 
   const handleScreenShare = async () => {
     if (isScreenSharing) {
-      // Stop screen sharing
       setIsScreenSharing(false);
-      if (screenStream) {
-        const tracks = screenStream.getTracks();
-        tracks.forEach(track => track.stop());
-        setScreenStream(null);
-      }
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
     } else {
-      // Start screen sharing
       try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+        });
+        setStream(screenStream);
         setIsScreenSharing(true);
-        setScreenStream(stream);
       } catch (error) {
         console.error("Error starting screen share:", error);
       }
@@ -75,63 +94,56 @@ function JoinMeeting({ socket }) {
     socket.emit("handRaise", { raised: newStatus });
   };
 
+  const handleExit = () => {
+    navigate("/");
+  };
+
   return (
     <div className="join-meeting-page">
       <h1>Meeting ID: {id}</h1>
-
       <div className="video-container">
-        <div className="controls-container">
-          {/* Participants Icon */}
-          <button className="control-button participants-button">
-            <i className="fa fa-users"></i>
-            <span className="participants-count">{participants.length}</span>
-          </button>
-
-          {/* Microphone Toggle */}
-          <button onClick={toggleMic} className="control-button">
-            <i className={`fa ${isMicOn ? "fa-microphone" : "fa-microphone-slash"}`}></i>
-          </button>
-
-          {/* Camera Toggle */}
-          <button onClick={toggleCamera} className="control-button">
-            <i className={`fa ${isCameraOn ? "fa-video" : "fa-video-slash"}`}></i>
-          </button>
-
-          {/* Screen Share */}
-          <button onClick={handleScreenShare} className="control-button">
-            <i className="fa fa-desktop"></i>
-          </button>
-
-          {/* Hand Raise */}
-          <button onClick={toggleHandRaise} className="control-button">
-            <i className={`fa ${isHandRaised ? "fa-hand-paper" : "fa-hand-rock"}`}></i>
-          </button>
-
-          {/* Exit Meeting */}
-          <button onClick={handleExit} className="control-button">
-            <i className="fa fa-sign-out"></i>
-          </button>
+        {/* Display participants */}
+        <div className="participants-list">
+          <h2>Participants ({participants.length})</h2>
+          <ul>
+            {participants.map((participant) => (
+              <li key={participant.id}>{participant.name}</li>
+            ))}
+          </ul>
         </div>
 
-        {/* Video Stream */}
-        {isCameraOn && !isScreenSharing && (
-          <Webcam
-            audio={isMicOn}
-            ref={webcamRef}
-            videoConstraints={{ facingMode: "user" }}
-          />
-        )}
+        {/* User video stream */}
+        <div className="user-video">
+          {stream && isCameraOn && <Webcam audio={isMicOn} />}
+        </div>
 
-        {/* Screen Share */}
-        {isScreenSharing && (
-          <video
-            autoPlay
-            muted={!isMicOn}
-            ref={webcamRef}
-            srcObject={screenStream}
-            style={{ width: "100%", height: "auto" }}
-          />
-        )}
+        {/* Meeting controls */}
+        <div className="controls-container">
+          {/* Microphone toggle */}
+          <button onClick={toggleMic} className="control-button">
+            <i className={`fa ${isMicOn ? "fa-microphone" : "fa-microphone-slash"}`} />
+          </button>
+
+          {/* Camera toggle */}
+          <button onClick={toggleCamera} className="control-button">
+            <i className={`fa ${isCameraOn ? "fa-video" : "fa-video-slash"}`} />
+          </button>
+
+          {/* Screen share */}
+          <button onClick={handleScreenShare} className="control-button">
+            <i className={`fa ${isScreenSharing ? "fa-stop" : "fa-desktop"}`} />
+          </button>
+
+          {/* Hand raise */}
+          <button onClick={toggleHandRaise} className="control-button">
+            <i className={`fa ${isHandRaised ? "fa-hand-paper" : "fa-hand-rock"}`} />
+          </button>
+
+          {/* Exit meeting */}
+          <button onClick={handleExit} className="control-button">
+            <i className="fa fa-sign-out" />
+          </button>
+        </div>
       </div>
     </div>
   );

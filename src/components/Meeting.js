@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import JoinMeeting from "../components/JoinMeeting";
-import { apiUrl } from '../config';  // Assuming apiUrl is coming from config file
-
+import { apiUrl } from '../config';
+import "font-awesome/css/font-awesome.min.css";
 import "./Meeting.css";
 
 function App() {
@@ -15,7 +15,7 @@ function App() {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    // No need to redefine apiUrl here
+    const apiUrl = process.env.REACT_APP_API_URL;
     axios
       .get(`${apiUrl}/meetings`)
       .then((response) => setMeetings(response.data))
@@ -27,11 +27,10 @@ function App() {
     return () => {
       if (socketConnection) socketConnection.disconnect();
     };
-  }, []); // Make sure you don't redeclare apiUrl
+  }, []);
 
   const createMeeting = (e) => {
     e.preventDefault();
-    // Use apiUrl directly without redefining it
     axios
       .post(`${apiUrl}/meetings`, { title, date })
       .then((response) => {
@@ -44,7 +43,7 @@ function App() {
   };
 
   const removeMeeting = (id) => {
-    // No need to redefine apiUrl here either
+    const apiUrl = process.env.REACT_APP_API_URL;
     axios
       .delete(`${apiUrl}/meetings/${id}`)
       .then(() => {
@@ -83,13 +82,9 @@ function App() {
             <li key={meeting._id}>
               <strong>{meeting.title}</strong> -{" "}
               {new Date(meeting.date).toLocaleString()}
-              <a
-                href={`/join-meeting/${meeting.meetingId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link to={`/join-meeting/${meeting.meetingId}`}>
                 <button>Join Meet</button>
-              </a>
+              </Link>
               <button onClick={() => removeMeeting(meeting._id)}>Remove</button>
             </li>
           ))}
